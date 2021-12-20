@@ -1,6 +1,172 @@
-import Head from 'next/head'
+import Head from 'next/head';
+import React, {useEffect, useState} from 'react';
+import {ethers} from 'ethers';
+import myEpicNft from '../../epic-nfts/artifacts/contracts/MyEpicNFT.sol/MyEpicNFT.json';
+
+// Constants
+const OPENSEA_LINK = 'https://testnets.opensea.io/collection/squarenft-2eo1b4lo9o';
+const TOTAL_MINT_COUNT = 10;
+
+const CONTRACT_ADDRESS = '0xF849356d311A355AD7960b9FdA60760Dcc9fA756';
 
 export default function Home() {
+  const [currentAccount, setCurrentAccount] = useState('');
+  const [status, setStatus] = useState('');
+  const [mintedCount, setMintedCount] = useState('X');
+
+  React.useEffect(() => {
+    checkNetwork();
+    checkNftCount();
+  }, []);
+
+  const checkNetwork = async () => {
+    const {ethereum} = window;
+    console.log(ethereum);
+
+    try {
+      let chainId = await ethereum.request({method: 'eth_chainId'});
+      console.log('Connected to chain ' + chainId);
+      const rinkebyChainId = '0x4';
+      if (chainId !== rinkebyChainId) {
+        alert('You are not connected to the Rinkeby Test Network!');
+      }
+    } catch {
+      console.log('not connected');
+    }
+
+    // String, hex code of the chainId of the Rinkebey test network
+  };
+
+  const checkIfWalletIsConnected = async () => {
+    const {ethereum} = window;
+
+    /*
+     * First make sure we have access to window.ethereum
+     */
+
+    if (!ethereum) {
+      setStatus('Make sure you have metamask!');
+      return;
+    } else {
+      setStatus('We have the ethereum object');
+    }
+
+    /*
+     * Check if we're authorized to access the user's wallet
+     */
+    const accounts = await ethereum.request({method: 'eth_accounts'});
+
+    /*
+     * User can have multiple authorized accounts, we grab the first one if its there!
+     */
+    if (accounts.length !== 0) {
+      const account = accounts[0];
+      setStatus('Found an authorized account:', account);
+      setCurrentAccount(account);
+    } else {
+      setStatus('No authorized account found');
+    }
+  };
+
+  /*
+   * Implement your connectWallet method here
+   */
+  const connectWallet = async () => {
+    try {
+      const {ethereum} = window;
+
+      if (!ethereum) {
+        alert('Get MetaMask!');
+        return;
+      }
+
+      /*
+       * Fancy method to request access to account.
+       */
+      const accounts = await ethereum.request({method: 'eth_requestAccounts'});
+
+      /*
+       * Boom! This should print out public address once we authorize Metamask.
+       */
+      console.log('Connected', accounts[0]);
+      setCurrentAccount(accounts[0]);
+    } catch (error) {
+      console.log(error);
+    }
+    let chainId = await ethereum.request({method: 'eth_chainId'});
+    console.log('Connected to chain ' + chainId);
+
+    // String, hex code of the chainId of the Rinkebey test network
+    const rinkebyChainId = '0x4';
+    if (chainId !== rinkebyChainId) {
+      alert('You are not connected to the Rinkeby Test Network!');
+    }
+  };
+
+  const checkNftCount = async () => {
+    try {
+      const {ethereum} = window;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const connectedContract = new ethers.Contract(CONTRACT_ADDRESS, myEpicNft.abi, signer);
+
+        let nftCount = await connectedContract.getTotalNFTsMintedSoFar();
+        const trueCount = nftCount.toNumber();
+        console.log({nftCount, trueCount});
+        setMintedCount(trueCount);
+      } else {
+        setStatus("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const askContractToMintNft = async () => {
+    try {
+      const {ethereum} = window;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const connectedContract = new ethers.Contract(CONTRACT_ADDRESS, myEpicNft.abi, signer);
+
+        connectedContract.on('NewEpicNFTMinted', (from, tokenId) => {
+          console.log(from, tokenId.toNumber());
+          setStatus(`We've minted your NFT and sent it to your wallet. Here's the link: https://rinkeby.rarible.com/token/${CONTRACT_ADDRESS}:${tokenId.toNumber()}`);
+        });
+
+        setStatus('Going to pop wallet now to pay gas...');
+        let nftTxn = await connectedContract.makeAnEpicNFT();
+
+        setStatus('Mining...please wait.');
+        await nftTxn.wait();
+
+        setStatus(`Mined, see transaction: https://rinkeby.etherscan.io/tx/${nftTxn.hash}`);
+        checkNftCount();
+      } else {
+        setStatus("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      setStatus(error);
+    }
+  };
+
+  // Render Methods
+  const renderNotConnectedContainer = () => (
+    <button onClick={connectWallet} className="cta-button connect-wallet-button">
+      Connect to Wallet
+    </button>
+  );
+
+  /*
+   * This runs our function when the page loads.
+   */
+  useEffect(() => {
+    checkIfWalletIsConnected();
+  }, []);
   return (
     <div className="container">
       <Head>
@@ -8,56 +174,25 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
+      <div className="App">
+        <div className="container">
+          <div className="header-container">
+            {currentAccount === '' ? (
+              renderNotConnectedContainer()
+            ) : (
+              /** Add askContractToMintNft Action for the onClick event **/
+              <button onClick={askContractToMintNft} className="cta-button connect-wallet-button">
+                Mint NFT
+              </button>
+            )}
+            <p>{status}</p>
+            <a href={OPENSEA_LINK}>View Opensea Collection</a>
             <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
+              {mintedCount}/{TOTAL_MINT_COUNT} minted
             </p>
-          </a>
+          </div>
         </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className="logo" />
-        </a>
-      </footer>
+      </div>
 
       <style jsx>{`
         .container {
@@ -134,8 +269,7 @@ export default function Home() {
           border-radius: 5px;
           padding: 0.75rem;
           font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+          font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
         }
 
         .grid {
@@ -195,9 +329,7 @@ export default function Home() {
         body {
           padding: 0;
           margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
         }
 
         * {
@@ -205,5 +337,5 @@ export default function Home() {
         }
       `}</style>
     </div>
-  )
+  );
 }
