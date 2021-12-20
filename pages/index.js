@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import React, {useEffect, useState} from 'react';
 import {ethers} from 'ethers';
-import myEpicNft from '../../epic-nfts/artifacts/contracts/MyEpicNFT.sol/MyEpicNFT.json';
+import myEpicNft from '../nft/MyEpicNFT.json';
 
 // Constants
 const OPENSEA_LINK = 'https://testnets.opensea.io/collection/squarenft-2eo1b4lo9o';
