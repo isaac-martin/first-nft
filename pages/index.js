@@ -16,6 +16,7 @@ export default function Home() {
 
   React.useEffect(() => {
     checkNetwork();
+    checkIfWalletIsConnected();
     checkNftCount();
   }, []);
 
@@ -59,6 +60,8 @@ export default function Home() {
     /*
      * User can have multiple authorized accounts, we grab the first one if its there!
      */
+
+    console.log(accounts);
     if (accounts.length !== 0) {
       const account = accounts[0];
       setStatus('Found an authorized account:', account);
@@ -120,6 +123,7 @@ export default function Home() {
         setStatus("Ethereum object doesn't exist!");
       }
     } catch (error) {
+      console.log(window);
       console.log(error);
     }
   };
@@ -161,12 +165,6 @@ export default function Home() {
     </button>
   );
 
-  /*
-   * This runs our function when the page loads.
-   */
-  useEffect(() => {
-    checkIfWalletIsConnected();
-  }, []);
   return (
     <div className="container">
       <Head>
