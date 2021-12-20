@@ -4,7 +4,7 @@ import {ethers} from 'ethers';
 import myEpicNft from '../nft/MyEpicNFT.json';
 
 // Constants
-const OPENSEA_LINK = 'https://testnets.opensea.io/collection/squarenft-2eo1b4lo9o';
+const OPENSEA_LINK = 'https://testnets.opensea.io/collection/squarenft-vhf2ij2ni4';
 const TOTAL_MINT_COUNT = 10;
 
 const CONTRACT_ADDRESS = '0xF849356d311A355AD7960b9FdA60760Dcc9fA756';
